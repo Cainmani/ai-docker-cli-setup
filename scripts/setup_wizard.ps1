@@ -910,6 +910,7 @@ $btnNext.Add_Click({
             Start-Sleep -Seconds 5
 
             # Track timestamp for incremental log updates
+            # Using UTC to ensure Docker's --since parameter works correctly across time zones
             $script:lastLogTimestamp = (Get-Date).ToUniversalTime()
 
             # Helper function to strip ANSI escape sequences
