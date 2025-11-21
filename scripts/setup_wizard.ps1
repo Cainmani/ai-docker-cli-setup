@@ -909,8 +909,8 @@ $btnNext.Add_Click({
             # Give entrypoint time to start the installation
             Start-Sleep -Seconds 5
 
-            # Track last log position for incremental updates
-            $script:lastLogLines = 0
+            # Track timestamp for incremental log updates
+            $script:lastLogTimestamp = (Get-Date).ToUniversalTime()
 
             # Helper function to strip ANSI escape sequences
             # Uses comprehensive pattern to handle all ANSI control sequences including:
@@ -925,21 +925,24 @@ $btnNext.Add_Click({
             # Helper function to update terminal display with new docker logs
             function Update-TerminalDisplay {
                 try {
-                    # Get recent docker logs (last 100 lines)
-                    $logResult = docker logs ai-cli --tail 100 2>&1
+                    # Get docker logs since last check using timestamp
+                    # Format timestamp as RFC3339 (required by Docker)
+                    $sinceTime = $script:lastLogTimestamp.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+                    $logResult = docker logs ai-cli --since $sinceTime 2>&1
+                    
                     if ($logResult) {
                         $logLines = $logResult -split "`n"
-                        $newLines = $logLines | Select-Object -Skip $script:lastLogLines
-
-                        if ($newLines -and $newLines.Count -gt 0) {
-                            foreach ($line in $newLines) {
+                        
+                        if ($logLines.Count -gt 0) {
+                            foreach ($line in $logLines) {
                                 if ($line.Trim()) {
                                     $cleanLine = Strip-AnsiCodes $line
                                     # Add to terminal box
                                     $script:terminalBox.AppendText("$cleanLine`r`n")
                                 }
                             }
-                            $script:lastLogLines = $logLines.Count
+                            # Update timestamp to now for next check
+                            $script:lastLogTimestamp = (Get-Date).ToUniversalTime()
                             # Auto-scroll to bottom
                             $script:terminalBox.SelectionStart = $script:terminalBox.TextLength
                             $script:terminalBox.ScrollToCaret()
