@@ -115,6 +115,49 @@ Workspace (/workspace → AI_Work)
 - Makes .exe truly portable (can be on Desktop, USB, Downloads)
 - `.env` file contains credentials and workspace path
 
+## Developer Mode (DEV_MODE)
+
+For developers working on this tool's shell scripts, DEV_MODE allows live editing without rebuilding the Docker image.
+
+### How It Works
+
+When `DEV_MODE=1` is set in `.env`, the setup wizard uses `docker-compose.dev.yml` overlay which mounts scripts directly from host:
+
+```yaml
+# docker-compose.dev.yml
+volumes:
+  - ./configure_tools.sh:/usr/local/bin/configure_tools.sh:ro
+  - ./auto_update.sh:/usr/local/bin/auto_update.sh:ro
+  - ./install_cli_tools.sh:/usr/local/bin/install_cli_tools.sh:ro
+  - ./entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
+```
+
+### Usage
+
+```bash
+# Enable: Edit docker/.env
+DEV_MODE=1
+
+# The setup wizard automatically uses docker-compose.dev.yml when DEV_MODE=1
+# Or manually:
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+# Edit scripts in docker/ directory - changes reflect immediately
+# No rebuild needed!
+```
+
+### When to Use
+
+- Editing `configure_tools.sh`, `auto_update.sh`, `install_cli_tools.sh`, or `entrypoint.sh`
+- Testing script changes without waiting for Docker rebuilds
+- Iterating quickly during development
+
+### When NOT to Use
+
+- Normal usage of the tool
+- Production deployments
+- Never commit `.env` with `DEV_MODE=1`
+
 ## Recent Improvements (2024)
 
 ### Claude Authentication Persistence

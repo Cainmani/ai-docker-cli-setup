@@ -89,6 +89,27 @@ ai-docker-cli-setup/
    - Test on a clean Windows installation if possible
    - Verify Docker operations work correctly
 
+### Developer Mode (DEV_MODE)
+
+When working on the Docker shell scripts (`configure_tools.sh`, `auto_update.sh`, `install_cli_tools.sh`, `entrypoint.sh`), use DEV_MODE to avoid rebuilding the Docker image for every change:
+
+1. **Enable DEV_MODE** in `docker/.env`:
+   ```bash
+   DEV_MODE=1
+   ```
+
+2. **Start container with dev overlay**:
+   ```bash
+   cd docker
+   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+   ```
+
+3. **Edit scripts** - changes reflect immediately in the running container
+
+4. **Disable when done** - set `DEV_MODE=0` and rebuild for final testing
+
+See `docker/docker-compose.dev.yml` for the mounted paths.
+
 4. **Commit with conventional commits**:
    ```powershell
    git commit -m "feat: add new feature description"

@@ -1,0 +1,23 @@
+# Dev mode overlay - mounts scripts for live editing without rebuilds
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# This allows developers working on this tool to:
+# - Edit scripts on the host and see changes immediately in the container
+# - Test script changes without rebuilding the Docker image
+# - Iterate faster during development
+#
+# To enable: Set DEV_MODE=1 in docker/.env before running the setup wizard
+#
+# SECURITY WARNING: This mode mounts host scripts directly into the container.
+# Only use for local development. Never commit .env with DEV_MODE=1 enabled.
+# Scripts from the host run with container privileges.
+
+services:
+  ai:
+    volumes:
+      # Mount scripts from host for live development
+      # Read-only prevents container from modifying host files
+      - ./configure_tools.sh:/usr/local/bin/configure_tools.sh:ro
+      - ./auto_update.sh:/usr/local/bin/auto_update.sh:ro
+      - ./install_cli_tools.sh:/usr/local/bin/install_cli_tools.sh:ro
+      - ./entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
