@@ -1200,13 +1200,13 @@ $btnNext.Add_Click({
 
             # Check for DEV_MODE to use docker-compose.dev.yml overlay
             $envFilePath = Join-Path $dockerPath ".env"
-            $composeFiles = ""
+            $composeFilesArray = @()
             if (Test-Path $envFilePath) {
                 $envLines = Get-Content $envFilePath
-                # Match DEV_MODE=1 with optional whitespace, ignoring comments
-                $devModeEnabled = ($envLines | Where-Object { $_ -match '^\s*DEV_MODE\s*=\s*1\s*$' }) -ne $null
+                # Match DEV_MODE=1 with optional whitespace and optional inline comments (e.g., "DEV_MODE=1 # comment")
+                $devModeEnabled = ($envLines | Where-Object { $_ -match '^\s*DEV_MODE\s*=\s*1\s*(?:#.*)?$' }) -ne $null
                 if ($devModeEnabled) {
-                    $composeFiles = "-f docker-compose.yml -f docker-compose.dev.yml"
+                    $composeFilesArray = @("-f", "docker-compose.yml", "-f", "docker-compose.dev.yml")
                     Write-Host "[DEV] Developer mode enabled - scripts will be mounted for live editing" -ForegroundColor Magenta
                     $script:buildTerminalBox.AppendText(">> DEV MODE: Scripts mounted for live editing`r`n")
                 }
@@ -1220,7 +1220,7 @@ $btnNext.Add_Click({
                 # Use --progress=plain for more readable output in terminal
                 # Add --no-cache when force rebuild is checked to ensure fresh build
                 if ($forceRebuild) {
-                    $buildArgs = "compose $composeFiles build --no-cache --progress=plain".Trim()
+                    $buildArgs = (@("compose") + $composeFilesArray + @("build", "--no-cache", "--progress=plain")) -join " "
                     Write-Host "[INFO] Force rebuild enabled - using --no-cache" -ForegroundColor Yellow
                     $script:buildTerminalBox.AppendText(">> Force rebuild: using --no-cache flag`r`n")
 
@@ -1236,7 +1236,7 @@ $btnNext.Add_Click({
                         }
                     }
                 } else {
-                    $buildArgs = "compose $composeFiles build --progress=plain".Trim()
+                    $buildArgs = (@("compose") + $composeFilesArray + @("build", "--progress=plain")) -join " "
                 }
                 $r1 = Run-Process-WithTerminal -file 'docker' -arguments $buildArgs -terminalBox $script:buildTerminalBox -statusLabel $script:lblBuildStatus -workingDirectory $dockerPath -operationName 'Docker Build'
                 if (-not $r1.Ok) {
@@ -1253,7 +1253,7 @@ $btnNext.Add_Click({
             $script:buildTerminalBox.AppendText("`r`n>> Starting container...`r`n")
             Write-Host "[INFO] Starting container" -ForegroundColor Cyan
 
-            $upArgs = "compose $composeFiles up -d".Trim()
+            $upArgs = (@("compose") + $composeFilesArray + @("up", "-d")) -join " "
             $r2 = Run-Process-WithTerminal -file 'docker' -arguments $upArgs -terminalBox $script:buildTerminalBox -statusLabel $script:lblBuildStatus -workingDirectory $dockerPath -operationName 'Container Start'
             if (-not $r2.Ok) {
                 $errMsg = 'up failed' + [Environment]::NewLine + $r2.StdErr
